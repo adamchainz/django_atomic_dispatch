@@ -27,6 +27,17 @@ class ConditionalSignal(object):
         else:
             self.signal.send_apply(self.sender, **self.named)
 
+    def replaces(self, other):
+        """Test if the conditional signal replaces another signal.
+        """
+
+        if self.signal != other.signal or \
+           self.sender != other.sender or \
+           not self.signal.replaces:
+            return
+
+        return self.signal.replaces(other.named)
+
     @property
     def description(self):
         """Description.
@@ -59,6 +70,28 @@ class SignalQueueStack(object):
     def __getitem__(self, key):
         return self.stack[key]
 
+    def __setitem__(self, key, value):
+        self.stack[key] = value
+
+
+class SignalQueue(object):
+    """Signal queue.
+    """
+
+    def __init__(self):
+        self.queue = []
+
+    def add(self, signal):
+        for i, s in enumerate(self.queue):
+            if signal.replaces(s):
+                self.queue[i] = signal
+                return
+
+        self.queue.append(signal)
+
+    def __iter__(self):
+        return iter(self.queue)
+
 
 def _get_signal_queue():
     """Get the local signal queues.
@@ -78,8 +111,12 @@ class Signal(DjangoSignal):
     When exiting the outside block, all surviving signals are dispatched.
     """
 
-    def __init__(self, providing_args=None, use_caching=False):
+    def __init__(self,
+                 providing_args=None,
+                 use_caching=False,
+                 replaces=None):
         super(Signal, self).__init__(providing_args, use_caching)
+        self.replaces = replaces
 
     def _send(self, sender, named, robust):
         signal_queue_stack = _get_signal_queue()
@@ -89,7 +126,7 @@ class Signal(DjangoSignal):
         if signal_queue_stack:
             logger.debug('Dispatching signal %s if transaction block is '
                          'successful' % (s.description))
-            signal_queue_stack[-1].append(s)
+            signal_queue_stack[-1].add(s)
         else:
             logger.debug('Dispatching signal %s immediately' %
                          (s.description))
@@ -123,7 +160,7 @@ def _post_enter_atomic_block(signal,
     if outermost:
         signal_queue_stack.reset()
 
-    signal_queue_stack.append([])
+    signal_queue_stack.append(SignalQueue())
 
 
 @receiver(signals.post_exit_atomic_block)
@@ -149,10 +186,11 @@ def _post_exit_atomic_block(signal,
             signal_queue_stack.pop()
         else:
             signal_queue = signal_queue_stack.pop()
+            parent_signal_queue = signal_queue_stack[-1]
+
             for s in signal_queue:
                 logger.debug('Promoting %s to outer transaction block' %
                              (s.description))
-            parent_signal_queue = signal_queue_stack[-1]
-            parent_signal_queue += signal_queue
+                parent_signal_queue.add(s)
     else:
         signal_queue_stack.pop()
