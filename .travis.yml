@@ -1,0 +1,12 @@
+language: python
+python:
+  - "2.7"
+env:
+  - DJANGO_DEP="Django>=1.6.0,<1.7.0"
+  - DJANGO_DEP="Django>=1.7.0,<1.8.0"
+install:
+  - pip install --use-mirrors $DJANGO_DEP
+  - pip install -r dev-requirements.txt --use-mirrors
+script: make test
+notifications:
+  email: false
