@@ -36,7 +36,7 @@ class ConditionalSignal(object):
            not self.signal.replaces:
             return
 
-        return self.signal.replaces(other.named)
+        return self.signal.replaces(self.named, other.named)
 
     @property
     def description(self):
@@ -85,9 +85,12 @@ class SignalQueue(object):
         for i, s in enumerate(self.queue):
             if signal.replaces(s):
                 self.queue[i] = signal
+                logger.debug('Replaced %s with %s in signal queue' %
+                             (s.description, signal.description))
                 return
 
         self.queue.append(signal)
+        logger.debug('Appended %s to signal queue' % (signal.description))
 
     def __iter__(self):
         return iter(self.queue)
@@ -100,7 +103,7 @@ def _get_signal_queue():
     return _thread_data.__dict__.setdefault('signal_queue', SignalQueueStack())
 
 
-class Signal(DjangoSignal):
+class PostTransactionSignal(DjangoSignal):
     """Signal delayed until after the outermost atomic block is exited.
 
     If the atomic transaction block within which the signal is dispatched is
@@ -114,9 +117,14 @@ class Signal(DjangoSignal):
     def __init__(self,
                  providing_args=None,
                  use_caching=False,
+                 description=None,
                  replaces=None):
-        super(Signal, self).__init__(providing_args, use_caching)
+        super(PostTransactionSignal, self).__init__(
+            providing_args=providing_args,
+            use_caching=use_caching
+        )
         self.replaces = replaces
+        self.description = description
 
     def _send(self, sender, named, robust):
         signal_queue_stack = _get_signal_queue()
@@ -139,10 +147,17 @@ class Signal(DjangoSignal):
         self._send(sender, named, True)
 
     def send_apply(self, sender, **named):
-        super(Signal, self).send(sender, **named)
+        super(PostTransactionSignal, self).send(sender, **named)
 
     def send_robust_apply(self, sender, **named):
-        super(Signal, self).send_robust(sender, **named)
+        super(PostTransactionSignal, self).send_robust(sender, **named)
+
+    def __repr__(self):
+        if self.description:
+            return '<%s.%s: %s>' % (self.__class__.__module__,
+                                    self.__class__.__name__,
+                                    self.description)
+        return super(PostTransactionSignal, self).__repr__()
 
 
 @receiver(signals.post_enter_atomic_block)
