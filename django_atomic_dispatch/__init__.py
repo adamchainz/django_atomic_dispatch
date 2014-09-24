@@ -163,7 +163,7 @@ class PostTransactionSignal(DjangoSignal):
 
 # Make sure that django_atomic_celery is loaded first to avoid races.
 if 'django_atomic_celery' in settings.INSTALLED_APPS:
-    import django_atomic_celery
+    import django_atomic_celery  # noqa
 
 
 @receiver(signals.post_enter_atomic_block)
