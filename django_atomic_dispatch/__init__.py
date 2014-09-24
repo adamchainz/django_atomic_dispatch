@@ -192,15 +192,14 @@ def _post_exit_atomic_block(signal,
     signal_queue_stack = _get_signal_queue()
 
     if successful:
+        signal_queue = signal_queue_stack.pop()
+
         if len(signal_queue_stack) == 1:
-            for s in signal_queue_stack[0]:
+            for s in signal_queue:
                 logger.debug('Dispatching %s as outer transaction block is '
                              'successful' % (s.description))
                 s.apply()
-
-            signal_queue_stack.pop()
         else:
-            signal_queue = signal_queue_stack.pop()
             parent_signal_queue = signal_queue_stack[-1]
 
             for s in signal_queue:
