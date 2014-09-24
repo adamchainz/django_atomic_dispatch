@@ -1,5 +1,6 @@
 import logging
 import threading
+from django.conf import settings
 from django.dispatch import Signal as DjangoSignal, receiver
 from django_atomic_signals import signals
 
@@ -158,6 +159,11 @@ class PostTransactionSignal(DjangoSignal):
                                     self.__class__.__name__,
                                     self.description)
         return super(PostTransactionSignal, self).__repr__()
+
+
+# Make sure that django_atomic_celery is loaded first to avoid races.
+if 'django_atomic_celery' in settings.INSTALLED_APPS:
+    import django_atomic_celery
 
 
 @receiver(signals.post_enter_atomic_block)
