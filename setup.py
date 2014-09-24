@@ -22,7 +22,7 @@ tests_require = [
 
 setup(
     name='django-atomic-dispatch',
-    version='1.0.0',
+    version='1.0.1',
     description='Atomic transaction aware signals for Django 1.6+',
     author='Nick Bruun',
     author_email='nick@bruun.co',
