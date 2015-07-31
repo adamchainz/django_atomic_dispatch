@@ -20,10 +20,14 @@ tests_require = [
     'rednose',
 ]
 
+with open('README.rst') as readme_file:
+    readme = readme_file.read()
+
 setup(
     name='django-atomic-dispatch',
     version='1.0.1',
     description='Atomic transaction aware signals for Django 1.6+',
+    long_description=readme,
     author='Nick Bruun',
     author_email='nick@bruun.co',
     url='http://bruun.co/',
