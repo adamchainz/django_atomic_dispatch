@@ -10,8 +10,6 @@ packages = [
 ]
 
 requires = [
-    'Django>=1.6.0,<1.8.0',
-    'django-atomic-signals>=1.1.0,<2.0',
 ]
 
 tests_require = [
@@ -25,12 +23,14 @@ with open('README.rst') as readme_file:
 
 setup(
     name='django-atomic-dispatch',
-    version='1.0.1',
+    version='2.0.0',
     description='Atomic transaction aware signals for Django 1.6+',
     long_description=readme,
     author='Nick Bruun',
     author_email='nick@bruun.co',
-    url='http://bruun.co/',
+    maintainer='Adam Johnson',
+    maintainer_email='me@adamj.eu',
+    url='https://github.com/adamchainz/django_atomic_dispatch',
     packages=packages,
     package_data={'': ['LICENSE']},
     package_dir={'django_atomic_dispatch': 'django_atomic_dispatch'},
